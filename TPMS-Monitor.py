@@ -23,9 +23,6 @@ from bleak.backends.scanner import AdvertisementData
 
 #import pprint
 
-#This must be a "class" like this so that the "match" (below) happens correctly
-#match on just FL_SENSOR will never be true, but match on sensors.FL_SENSOR and it does match the string?
-#yeah weird, go figure! something with how python works
 class sensors:
 	########################################
 	# Update the sensor MAC addresses here #
