@@ -1,4 +1,3 @@
-#!/home/ride/TPMS/.venv/bin/python
 '''
 Simple Python3 TPMS scanner
 Sept 2025 ride
