@@ -89,13 +89,20 @@ class MainWindow(QMainWindow):
 	def __init__(self, loop):
 		super().__init__()
 		self.loop = loop
-		self.setGeometry(0, 800, 350, 400) #Stick the Window in the bottom left corner
-		self.pos1 = [0,0]
-		self.pos2 = [0,0]
+		#Stick the Window in the bottom left corner
+		self.setGeometry(0, 800, 350, 400)
+		#window title
 		self.setWindowTitle("Truckputer TPMS")
+		#program icon
 		self.setWindowIcon(QIcon("./TPMSicon.png"))
-		self.setWindowFlags(QtCore.Qt.FramelessWindowHint) #removes the window's top bar and borders
+		#removes the window's top bar and borders
+		self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+		#window background set to black
+		self.setStyleSheet("background-color: black")
+		#window transparency
+		self.setWindowOpacity(0.9)
 		self.ble_task = None
+		#activity light toggle on/off
 		self.activity = 0
 		#activity light timer (ChatGPT help)
 		self.activity_timer = QtCore.QTimer()
