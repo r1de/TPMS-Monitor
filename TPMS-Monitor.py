@@ -29,132 +29,61 @@ class sensors:
 	########################################
 	FL_SENSOR = "4B:A8:00:00:4F:43" #Front Left
 	FR_SENSOR = "4B:9D:00:00:4A:2A" #Front Right
-	RL_SENSOR = "" #Rear Left
-	RR_SENSOR = "" #Rear Right
-	#SP_SENSOR = "" #Spare (This may never get used, it does not spin)
+	RL_SENSOR = "11:22:33:44:55:66" #Rear Left
+	RR_SENSOR = "AA:BB:CC:DD:EE:FF" #Rear Right
 
-#This is the BLE scanner using the "Bleak" python module.
+def parse_sensor_data(advertisement_data): #Parse the data RX'd from the sensors
+	mfdata = advertisement_data.manufacturer_data
+	for data1, list2 in mfdata.items():
+		list1 = [data1 % 256, data1 // 256]
+		ldata = list1 + list(list2)
+
+		batt = ldata[1] / 10
+		temp = ldata[2]
+		press = (((ldata[3] * 256) | (ldata[4])) - 145) / 10.0  # in psi
+
+		return {
+			"BATT": batt,
+			"TEMPc": temp,
+			"TEMPf": round((temp * (9 / 5)) + 32, 2),
+			"BAR": round(press / 14.504, 1),
+			"PSI": round(press, 1),
+			"KPA": round((press / 14.504) * 10, 1),
+			#"KPA": round(press * 6.895, 2),
+		}
+	return None
+
+#BLE Scanner function
 async def ble_device_scanner(window):
 	try:
+		# Mapping MAC addresses to tire positions
+		mac_to_tire = {
+			sensors.FL_SENSOR: "FL",
+			sensors.FR_SENSOR: "FR",
+			sensors.RL_SENSOR: "RL",
+			sensors.RR_SENSOR: "RR",
+		}
+
 		def found(device: BLEDevice, advertisement_data: AdvertisementData):
-			match device.address:
-				case sensors.FL_SENSOR:
-#					print("Front Left detected")
-					mfdata = advertisement_data.manufacturer_data
-					for i in range(0,len(mfdata)):
-						data1 = list(mfdata.keys())[i]
-						list1 = [int(data1)%256,int(int(data1)/256)]
-						list2 = list(mfdata[data1])
-						ldata = list1 + list2
-						batt = ldata[1]/10
-						temp = ldata[2]
-#						press = ((ldata[3]*256+ldata[4])-145)/145  # absolute pressure psi to bar (relative) (multiply by 14.504 to go back to psi)
-						press = (((ldata[3]*256) | (ldata[4]))-145)/10.0 #in psi?
+			tire = mac_to_tire.get(device.address)
+			if tire:
+				parsed = parse_sensor_data(advertisement_data)
+				if parsed:
+					window.tire_info[tire].update(parsed)
+					window.activity = 1
+					window.activity_timer.start(750)
+					window.trigger_repaint()
 
-						window.tire_info['FL']['BATT'] = batt
-						window.tire_info['FL']['TEMPc'] = temp
-						window.tire_info['FL']['TEMPf'] = round((temp*(9/5))+32, 2)
-						window.tire_info['FL']['BAR'] = round(press/14.504, 2)
-						window.tire_info['FL']['PSI'] = round(press, 1)
-						window.tire_info['FL']['KPA'] = round(press*6.895, 2)
-
-						window.activity = 1
-						window.activity_timer.start(750)  # 3/4 second
-						window.trigger_repaint()
-#						print("B: ",batt, "  T: ",(temp*(9/5))+32,"F (",temp,"C)  p: ",round(press,2), sep='')
-
-				case sensors.FR_SENSOR:
-#					print("Front Right detected")
-					mfdata = advertisement_data.manufacturer_data
-					for i in range(0,len(mfdata)):
-						data1 = list(mfdata.keys())[i]
-						list1 = [int(data1)%256,int(int(data1)/256)]
-						list2 = list(mfdata[data1])
-						ldata = list1 + list2
-						batt = ldata[1]/10
-						temp = ldata[2]
-#						press = ((ldata[3]*256+ldata[4])-145)/145  # absolute pressure psi to bar (relative) (multiply by 14.504 to go back to psi)
-						press = (((ldata[3]*256) | (ldata[4]))-145)/10.0 #in psi?
-
-						window.tire_info['FR']['BATT'] = batt
-						window.tire_info['FR']['TEMPc'] = temp
-						window.tire_info['FR']['TEMPf'] = round((temp*(9/5))+32, 2)
-						window.tire_info['FR']['BAR'] = round(press/14.504, 2)
-						window.tire_info['FR']['PSI'] = round(press, 1)
-						window.tire_info['FR']['KPA'] = round(press*6.895, 2)
-
-						window.activity = 1
-						window.activity_timer.start(750)  # 3/4 second
-						window.trigger_repaint()
-#						print("B: ",batt, "  T: ",(temp*(9/5))+32,"F (",temp,"C)  p: ",round(press,2), sep='')
-
-				case sensors.RL_SENSOR:
-#					print("Rear Left detected")
-					mfdata = advertisement_data.manufacturer_data
-					for i in range(0,len(mfdata)):
-						data1 = list(mfdata.keys())[i]
-						list1 = [int(data1)%256,int(int(data1)/256)]
-						list2 = list(mfdata[data1])
-						ldata = list1 + list2
-						batt = ldata[1]/10
-						temp = ldata[2]
-#						press = ((ldata[3]*256+ldata[4])-145)/145  # absolute pressure psi to bar (relative) (multiply by 14.504 to go back to psi)
-						press = (((ldata[3]*256) | (ldata[4]))-145)/10.0 #in psi?
-
-						window.tire_info['RL']['BATT'] = batt
-						window.tire_info['RL']['TEMPc'] = temp
-						window.tire_info['RL']['TEMPf'] = round((temp*(9/5))+32, 2)
-						window.tire_info['RL']['BAR'] = round(press/14.504, 2)
-						window.tire_info['RL']['PSI'] = round(press, 1)
-						window.tire_info['RL']['KPA'] = round(press*6.895, 2)
-
-						window.activity = 1
-						window.activity_timer.start(750)  # 3/4 second
-						window.trigger_repaint()
-#						print("B: ",batt, "  T: ",(temp*(9/5))+32,"F (",temp,"C)  p: ",round(press,2), sep='')
-
-				case sensors.RR_SENSOR:
-#					print("Rear Right detected")
-					mfdata = advertisement_data.manufacturer_data
-					for i in range(0,len(mfdata)):
-						data1 = list(mfdata.keys())[i]
-						list1 = [int(data1)%256,int(int(data1)/256)]
-						list2 = list(mfdata[data1])
-						ldata = list1 + list2
-						batt = ldata[1]/10
-						temp = ldata[2]
-#						press = ((ldata[3]*256+ldata[4])-145)/145  # absolute pressure psi to bar (relative) (multiply by 14.504 to go back to psi)
-						press = (((ldata[3]*256) | (ldata[4]))-145)/10.0 #in psi?
-
-						window.tire_info['RR']['BATT'] = batt
-						window.tire_info['RR']['TEMPc'] = temp
-						window.tire_info['RR']['TEMPf'] = round((temp*(9/5))+32, 2)
-						window.tire_info['RR']['BAR'] = round(press/14.504, 2)
-						window.tire_info['RR']['PSI'] = round(press, 1)
-						window.tire_info['RR']['KPA'] = round(press*6.895, 2)
-
-						window.activity = 1
-						window.activity_timer.start(750)  # 3/4 second
-						window.trigger_repaint()
-#						print("B: ",batt, "  T: ",(temp*(9/5))+32,"F (",temp,"C)  p: ",round(press,2), sep='')
-
-				case _: #Default Case
-					#Just keep looking for the sensors
-					pass
-
-		#Start BT scanning for BLE devices with the above MAC addresses
+		# Start BT scanning
 		scanner = BleakScanner(detection_callback=found)
 		await scanner.start()
-#		print("Scanner started. Waiting for devices...")
 
-		#This keeps something (the async thread?) alive? (ChatGPT fix)
+		# Keep the scanner alive
 		while True:
-			await asyncio(sleep(10.0))
+			await asyncio.sleep(10.0)
 			window.trigger_repaint()
 
-	#Kill scanner when window closes (ChatGPT fix)
 	except asyncio.CancelledError:
-#		print("BLE scanner cancelled. Cleaning up...")
 		await scanner.stop()
 		raise
 
@@ -196,6 +125,44 @@ class MainWindow(QMainWindow):
 				self.activity = 0
 				self.update()
 
+			def drawVehicleFrame(self, qp): #Draws the basic vehicle wheels and axles
+				frtLeft = QRect(15,15,100,155)
+				frtRight = QRect(235,15,100,155)
+				rearLeft = QRect(15,215,100,155)
+				rearRight = QRect(235,215,100,155)
+
+				#Store the rectangles so they are easier to use later
+				self.tireRects = {
+					"FL": frtLeft,
+					"FR": frtRight,
+					"RL": rearLeft,
+					"RR": rearRight,
+				}
+
+				for rect in self.tireRects.values():
+					qp.drawRect(rect)
+
+				#front "axle"
+				qp.drawLine(102,95,250,95)
+				#rear "axle"
+				qp.drawLine(102,295,250,295)
+				#"driveline"
+				qp.drawLine(175,95,175,295)
+
+				#make a little circle for the rear diff
+				#(makes it easy to tell front and rear! ;-) )
+				qp.setBrush(QBrush(Qt.white, Qt.SolidPattern))
+				qp.drawEllipse(165,285,20,20) #x,y,width,height
+
+
+			def activityIndicator(self, qp): #draw the little activity light
+				if self.activity == 1:
+					qp.setBrush(QBrush(Qt.green, Qt.SolidPattern))
+				else:
+					qp.setBrush(QBrush(Qt.NoBrush))
+				qp.drawEllipse(170,10,10,10)
+
+
 			def drawTireInfo(self, qp, rect, tire, units): #draw the info in each "wheel"
 				upperText = (Qt.AlignTop | Qt.AlignHCenter)
 				centerText = Qt.AlignCenter
@@ -222,6 +189,7 @@ class MainWindow(QMainWindow):
 						qp.setPen(QtCore.Qt.GlobalColor.red)
 				#KPA
 				if units == "KPA":
+					qp.setFont(QFont("Noto Sans", 21, QFont.Bold))
 					if 210 <= value <= 280:
 						qp.setPen(QtCore.Qt.GlobalColor.green)
 					elif 140 <= value < 210:
