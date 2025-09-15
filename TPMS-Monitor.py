@@ -1,11 +1,11 @@
-'''
-Simple Python3 TPMS scanner
-Sept 2025 ride
-Originally based on "tpms-bleak.py" at https://github.com/andi38/TPMS
-Added QT window and other functionality
-Lots of fixes and help from ChatGPT actually.
-It was useful. https://chatgpt.com/g/g-cKrO5THiU-python-code-fixer
-'''
+#########################################################################
+# Simple Python3 TPMS scanner                                           #
+# Sept 2025 ride                                                        #
+# Originally based on "tpms-bleak.py" at https://github.com/andi38/TPMS #
+# Added QT window and other functionality                               #
+# Lots of fixes and help from ChatGPT actually.                         #
+# It was useful. https://chatgpt.com/g/g-cKrO5THiU-python-code-fixer    #
+#########################################################################
 
 #basic system stuff and async modules
 import sys, asyncio, qasync
@@ -53,7 +53,7 @@ async def ble_device_scanner(window):
 
 						window.tire_info['FL']['BATT'] = batt
 						window.tire_info['FL']['TEMPc'] = temp
-						window.tire_info['FL']['TEMPf'] = (temp*(9/5))+32
+						window.tire_info['FL']['TEMPf'] = round((temp*(9/5))+32, 2)
 						window.tire_info['FL']['BAR'] = round(press/14.504, 2)
 						window.tire_info['FL']['PSI'] = round(press, 1)
 						window.tire_info['FL']['KPA'] = round(press*6.895, 2)
@@ -78,7 +78,7 @@ async def ble_device_scanner(window):
 
 						window.tire_info['FR']['BATT'] = batt
 						window.tire_info['FR']['TEMPc'] = temp
-						window.tire_info['FR']['TEMPf'] = (temp*(9/5))+32
+						window.tire_info['FR']['TEMPf'] = round((temp*(9/5))+32, 2)
 						window.tire_info['FR']['BAR'] = round(press/14.504, 2)
 						window.tire_info['FR']['PSI'] = round(press, 1)
 						window.tire_info['FR']['KPA'] = round(press*6.895, 2)
@@ -103,7 +103,7 @@ async def ble_device_scanner(window):
 
 						window.tire_info['RL']['BATT'] = batt
 						window.tire_info['RL']['TEMPc'] = temp
-						window.tire_info['RL']['TEMPf'] = (temp*(9/5))+32
+						window.tire_info['RL']['TEMPf'] = round((temp*(9/5))+32, 2)
 						window.tire_info['RL']['BAR'] = round(press/14.504, 2)
 						window.tire_info['RL']['PSI'] = round(press, 1)
 						window.tire_info['RL']['KPA'] = round(press*6.895, 2)
@@ -128,7 +128,7 @@ async def ble_device_scanner(window):
 
 						window.tire_info['RR']['BATT'] = batt
 						window.tire_info['RR']['TEMPc'] = temp
-						window.tire_info['RR']['TEMPf'] = (temp*(9/5))+32
+						window.tire_info['RR']['TEMPf'] = round((temp*(9/5))+32, 2)
 						window.tire_info['RR']['BAR'] = round(press/14.504, 2)
 						window.tire_info['RR']['PSI'] = round(press, 1)
 						window.tire_info['RR']['KPA'] = round(press*6.895, 2)
@@ -136,7 +136,7 @@ async def ble_device_scanner(window):
 						window.activity = 1
 						window.activity_timer.start(750)  # 3/4 second
 						window.trigger_repaint()
-						print("B: ",batt, "  T: ",(temp*(9/5))+32,"F (",temp,"C)  p: ",round(press,2), sep='')
+#						print("B: ",batt, "  T: ",(temp*(9/5))+32,"F (",temp,"C)  p: ",round(press,2), sep='')
 
 				case _: #Default Case
 					#Just keep looking for the sensors
@@ -187,9 +187,53 @@ class MainWindow(QMainWindow):
 					"SP":{"BATT":0, "TEMPf":0, "TEMPc":32, "PSI":0, "BAR":0.0, "KPA":0}
 				}
 
+				self.unitsButton = QPushButton("PSI", self)
+				self.unitsButton.setFont(QFont("Noto Sans", 20, QFont.Bold))
+				self.unitsButton.clicked.connect(self.cycleUnits)
+				self.unitsButton.setGeometry(145, 40, 60, 50)
+
 			def reset_activity(self):
 				self.activity = 0
 				self.update()
+
+			def drawTireInfo(self, qp, rect, tire, units): #draw the info in each "wheel"
+				upperText = (Qt.AlignTop | Qt.AlignHCenter)
+				centerText = Qt.AlignCenter
+				bottomText = (Qt.AlignBottom | Qt.AlignHCenter)
+				qp.setFont(QFont("Noto Sans", 30, QFont.Bold))
+				value = tire[units]
+
+				#Check pressure and change color based on range
+				#PSI
+				if units == "PSI":
+					if 30 <= value <= 40:
+						qp.setPen(QtCore.Qt.GlobalColor.green)
+					elif 20 <= value < 30:
+						qp.setPen(QtCore.Qt.GlobalColor.yellow)
+					else:
+						qp.setPen(QtCore.Qt.GlobalColor.red)
+				#BAR
+				if units == "BAR":
+					if 2.1 <= value <= 2.8:
+						qp.setPen(QtCore.Qt.GlobalColor.green)
+					elif 1.4 <= value < 2.1:
+						qp.setPen(QtCore.Qt.GlobalColor.yellow)
+					else:
+						qp.setPen(QtCore.Qt.GlobalColor.red)
+				#KPA
+				if units == "KPA":
+					if 210 <= value <= 280:
+						qp.setPen(QtCore.Qt.GlobalColor.green)
+					elif 140 <= value < 210:
+						qp.setPen(QtCore.Qt.GlobalColor.yellow)
+					else:
+						qp.setPen(QtCore.Qt.GlobalColor.red)
+
+				qp.drawText(rect, upperText, str(value))
+
+				qp.setFont(QFont("Noto Sans", 11, QFont.Bold))
+				qp.setPen(QtCore.Qt.GlobalColor.white)
+				qp.drawText(rect, bottomText, f"{tire['TEMPf']}°F\n{tire['TEMPc']}°C\n{tire['BATT']}v\n")
 
 			def paintEvent(self, event):
 				width = self.pos2[0]-self.pos1[0]
@@ -254,80 +298,16 @@ class MainWindow(QMainWindow):
 				centerRight = (Qt.AlignVCenter | Qt.AlignRight)
 				bottomText = (Qt.AlignBottom | Qt.AlignHCenter)
 
-				###
-				#PSI "label" (maybe turn this into a button later that can change the pressure units)
-				###
-				#qp.setFont(QFont("Noto Sans", 16, QFont.Bold))
-				#qp.drawText(100, 46, 50, 30, centerText, "PSI")
+				##########################
+				# Fill out the tire Info #
+				##########################
+				units = self.tire_info['UNITS']
+				self.drawTireInfo(qp, frtLeft, self.tire_info['FL'], units)
+				self.drawTireInfo(qp, frtRight, self.tire_info['FR'], units)
+				self.drawTireInfo(qp, rearLeft, self.tire_info['RL'], units)
+				self.drawTireInfo(qp, rearRight, self.tire_info['RR'], units)
 
-				###################
-				# Front Left Info #
-				###################
-				qp.setFont(QFont("Noto Sans", 30, QFont.Bold))
-				if 30 <= self.tire_info['FL']['PSI'] <= 40:
-					qp.setPen(QtCore.Qt.GlobalColor.green)
-				elif 20 <= self.tire_info['FL']['PSI'] < 30:
-					qp.setPen(QtCore.Qt.GlobalColor.yellow)
-				else:
-					qp.setPen(QtCore.Qt.GlobalColor.red)
-				qp.drawText(frtLeft, upperText, str(self.tire_info['FL']['PSI']))
-				qp.setFont(QFont("Noto Sans", 11, QFont.Bold))
-				qp.setPen(QtCore.Qt.GlobalColor.white)
-				qp.drawText(frtLeft, centerText, "\n(" + str(self.tire_info['FL']['BAR']) + "b)\n(" + str(self.tire_info['FL']['KPA']) + "kPa)")
-				## example: "0\N{DEGREE SIGN}F\n0v"
-				qp.drawText(frtLeft, bottomText, str(self.tire_info['FL']['TEMPf']) + "\N{DEGREE SIGN}F " + str(self.tire_info['FL']['TEMPc']) + "\N{DEGREE SIGN}C\n" + str(self.tire_info['FL']['BATT']) + "v")
-
-				####################
-				# Front Right Info #
-				####################
-				qp.setFont(QFont("Noto Sans", 30, QFont.Bold))
-				if 30 <= self.tire_info['FR']['PSI'] <= 40:
-					qp.setPen(QtCore.Qt.GlobalColor.green)
-				elif 20 <= self.tire_info['FR']['PSI'] < 30:
-					qp.setPen(QtCore.Qt.GlobalColor.yellow)
-				else:
-					qp.setPen(QtCore.Qt.GlobalColor.red)
-				qp.drawText(frtRight, upperText, str(self.tire_info['FR']['PSI']))
-				qp.setFont(QFont("Noto Sans", 11, QFont.Bold))
-				qp.setPen(QtCore.Qt.GlobalColor.white)
-				qp.drawText(frtRight, centerText, "\n(" + str(self.tire_info['FR']['BAR']) + "b)\n(" + str(self.tire_info['FR']['KPA']) + "kPa)")
-				qp.drawText(frtRight, bottomText, str(self.tire_info['FR']['TEMPf']) + "\N{DEGREE SIGN}F " + str(self.tire_info['FR']['TEMPc']) + "\N{DEGREE SIGN}C\n" + str(self.tire_info['FR']['BATT']) + "v")
-
-				##################
-				# Rear Left Info #
-				##################
-				qp.setFont(QFont("Noto Sans", 30, QFont.Bold))
-				if 30 <= self.tire_info['RL']['PSI'] <= 40:
-					qp.setPen(QtCore.Qt.GlobalColor.green)
-				elif 20 <= self.tire_info['RL']['PSI'] < 30:
-					qp.setPen(QtCore.Qt.GlobalColor.yellow)
-				else:
-					qp.setPen(QtCore.Qt.GlobalColor.red)
-				qp.drawText(rearLeft, upperText, str(self.tire_info['RL']['PSI']))
-				qp.setFont(QFont("Noto Sans", 11, QFont.Bold))
-				qp.setPen(QtCore.Qt.GlobalColor.white)
-				qp.drawText(rearLeft, centerText, "\n(" + str(self.tire_info['RL']['BAR']) + "b)\n(" + str(self.tire_info['RL']['KPA']) + "kPa)")
-				qp.drawText(rearLeft, bottomText, str(self.tire_info['RL']['TEMPf']) + "\N{DEGREE SIGN}F " + str(self.tire_info['RL']['TEMPc']) + "\N{DEGREE SIGN}C\n" + str(self.tire_info['RL']['BATT']) + "v")
-
-				###################
-				# Rear Right Info #
-				###################
-				qp.setFont(QFont("Noto Sans", 30, QFont.Bold))
-				if 30 <= self.tire_info['RR']['PSI'] <= 40:
-					qp.setPen(QtCore.Qt.GlobalColor.green)
-				elif 20 <= self.tire_info['RR']['PSI'] < 30:
-					qp.setPen(QtCore.Qt.GlobalColor.yellow)
-				else:
-					qp.setPen(QtCore.Qt.GlobalColor.red)
-				qp.drawText(rearRight, upperText, str(self.tire_info['RR']['PSI']))
-				qp.setFont(QFont("Noto Sans", 11, QFont.Bold))
-				qp.setPen(QtCore.Qt.GlobalColor.white)
-				qp.drawText(rearRight, centerText, "\n(" + str(self.tire_info['RR']['BAR']) + "b)\n(" + str(self.tire_info['RR']['KPA']) + "kPa)")
-				qp.drawText(rearRight, bottomText, str(self.tire_info['RR']['TEMPf']) + "\N{DEGREE SIGN}F " + str(self.tire_info['RR']['TEMPc']) + "\N{DEGREE SIGN}C\n" + str(self.tire_info['RR']['BATT']) + "v")
-
-				#save spare for later, maybe we can figure something out
-				#qp.drawText(100, 270, 50, 100, centerText, self.spareText)
-
+				#Stop drawing the Vehicle and other stuff.
 				qp.end()
 
 			#Repaint window?
@@ -349,6 +329,15 @@ class MainWindow(QMainWindow):
 				super().closeEvent(event)
 #for debugging				pprint.pprint(self.tire_info)
 
+			def cycleUnits(self):
+				current = self.tire_info['UNITS']
+				order = ["PSI", "BAR", "KPA"]
+				nextUnit = order[(order.index(current) + 1) % len(order)]
+				self.tire_info['UNITS'] = nextUnit
+				self.unitsButton.setText(f"{nextUnit}")
+				self.trigger_repaint()
+#				print(self.tire_info)
+
 async def main_window():
 	app = QApplication(sys.argv)
 	loop = qasync.QEventLoop(app)
@@ -358,9 +347,9 @@ async def main_window():
 
 	#Quit button for when we remove title bar, etc.
 	quitButton = QPushButton("Quit", window)
+	quitButton.setFont(QFont("Noto Sans", 14, QFont.Bold))
 	quitButton.clicked.connect(window.close)
 	quitButton.setGeometry(145, 345, 60, 50)
-
 
 	window.show()
 	window.trigger_repaint()
