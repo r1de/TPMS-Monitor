@@ -21,6 +21,9 @@ from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
+#Get the sensor addresses from the other file
+import sensorMacAddresses
+
 #import pprint
 
 class sensors:
