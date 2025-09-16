@@ -120,6 +120,7 @@ class MainWindow(QMainWindow):
 		#the units button to cycle PSI, BAR, KPA values
 		self.unitsButton = QPushButton("PSI", self)
 		self.unitsButton.setFont(QFont("Noto Sans", 20, QFont.Bold))
+		self.unitsButton.setStyleSheet("background-color: #303030")
 		self.unitsButton.clicked.connect(self.cycleUnits)
 		self.unitsButton.setGeometry(145, 40, 60, 50)
 
@@ -257,6 +258,7 @@ async def main_window():
 	#Quit button for when we remove title bar, etc.
 	quitButton = QPushButton("Quit", window)
 	quitButton.setFont(QFont("Noto Sans", 14, QFont.Bold))
+	quitButton.setStyleSheet("background-color: #303030")
 	quitButton.clicked.connect(window.close)
 	quitButton.setGeometry(145, 345, 60, 50)
 
