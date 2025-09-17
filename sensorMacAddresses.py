@@ -8,5 +8,5 @@ class sensors:
 	FR_SENSOR = "FF:AA:BB:CC:DD:EE" #Front Right
 	RL_SENSOR = "EE:FF:AA:BB:CC:DD" #Rear Left
 	RR_SENSOR = "DD:EE:FF:AA:BB:CC" #Rear Right
-	X1_SENSOR = "CC:DD:EE:FF:AA:BB" #Front Left
-	X2_SENSOR = "BB:CC:DD:EE:FF:AA" #Front Right
+	X1_SENSOR = "CC:DD:EE:FF:AA:BB" #Extra 1
+	X2_SENSOR = "BB:CC:DD:EE:FF:AA" #Extra 2
